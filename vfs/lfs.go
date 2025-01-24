@@ -1024,7 +1024,9 @@ func (lfs *LogStructuredFS) compressDirtyRegion() error {
 				}
 
 				// Delete dirty region file
+				lfs.mu.Lock()
 				err = os.Remove(filepath.Join(lfs.directory, fd.Name()))
+				lfs.mu.Unlock()
 				if err != nil {
 					return fmt.Errorf("failed to remove dirty region: %w", err)
 				}
