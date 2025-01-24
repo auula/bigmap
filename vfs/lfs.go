@@ -122,27 +122,38 @@ func (lfs *LogStructuredFS) BatchFetchSegments(inodes ...*INode) ([]*Segment, er
 }
 
 func (lfs *LogStructuredFS) FetchSegment(inum uint64) (*Segment, error) {
+	// Calculate the index shard
 	imap := lfs.indexs[inum%uint64(indexShard)]
-	if imap != nil {
-		inode, ok := imap.index[inum]
-		if !ok {
-			return nil, fmt.Errorf("inode index information not found")
-		}
-		if inode.ExpiredAt <= uint64(time.Now().Unix()) {
-			delete(imap.index, inum)
-			return nil, fmt.Errorf("inode index information expired")
-		}
-		fd, ok := lfs.regions[inode.RegionID]
-		if !ok {
-			return nil, fmt.Errorf("failed to find data region")
-		}
-		_, segment, err := readSegment(fd, inode.Position, SEGMENT_PADDING)
-		if err != nil {
-			return nil, err
-		}
-		return segment, nil
+	if imap == nil {
+		return nil, fmt.Errorf("inode index shard for %d not found", inum)
 	}
-	return nil, nil
+
+	// Retrieve inode info
+	inode, ok := imap.index[inum]
+	if !ok {
+		return nil, fmt.Errorf("inode index for %d not found", inum)
+	}
+
+	// Check if the inode is expired
+	if inode.ExpiredAt <= uint64(time.Now().Unix()) {
+		delete(imap.index, inum)
+		return nil, fmt.Errorf("inode index for %d has expired", inum)
+	}
+
+	// Retrieve the corresponding data region
+	fd, ok := lfs.regions[inode.RegionID]
+	if !ok {
+		return nil, fmt.Errorf("data region with ID %d not found", inode.RegionID)
+	}
+
+	// Read the segment from the data region
+	_, segment, err := readSegment(fd, inode.Position, SEGMENT_PADDING)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read segment: %w", err)
+	}
+
+	// Return the fetched segment
+	return segment, nil
 }
 
 func InodeNum(key string) uint64 {
