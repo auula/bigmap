@@ -103,6 +103,15 @@ func (lfs *LogStructuredFS) PutSegment(inum uint64, seg Segment) error {
 	lfs.offset += uint64(seg.Size())
 	lfs.mu.Unlock()
 
+	if lfs.offset >= uint64(regionThreshold) {
+		lfs.mu.Lock()
+		err := lfs.createActiveRegion()
+		lfs.mu.Unlock()
+		if err != nil {
+			return err
+		}
+	}
+
 	// Use a read lock to prevent conflicts during index updates.
 	lfs.mu.RLock()
 	defer lfs.mu.RUnlock()
