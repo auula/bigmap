@@ -138,7 +138,9 @@ func (lfs *LogStructuredFS) FetchSegment(inum uint64) (*Segment, error) {
 
 	// Check if the inode is expired
 	if inode.ExpiredAt <= uint64(time.Now().Unix()) {
+		imap.mu.Lock()
 		delete(imap.index, inum)
+		imap.mu.Unlock()
 		return nil, fmt.Errorf("inode index for %d has expired", inum)
 	}
 
