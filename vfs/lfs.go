@@ -129,7 +129,9 @@ func (lfs *LogStructuredFS) FetchSegment(inum uint64) (*Segment, error) {
 	}
 
 	// Retrieve inode info
+	imap.mu.RLock()
 	inode, ok := imap.index[inum]
+	imap.mu.RUnlock()
 	if !ok {
 		return nil, fmt.Errorf("inode index for %d not found", inum)
 	}
@@ -141,12 +143,16 @@ func (lfs *LogStructuredFS) FetchSegment(inum uint64) (*Segment, error) {
 	}
 
 	// Retrieve the corresponding data region
+	lfs.mu.RLock()
 	fd, ok := lfs.regions[inode.RegionID]
+	lfs.mu.RUnlock()
 	if !ok {
 		return nil, fmt.Errorf("data region with ID %d not found", inode.RegionID)
 	}
 
 	// Read the segment from the data region
+	lfs.mu.RLock()
+	defer lfs.mu.RUnlock()
 	_, segment, err := readSegment(fd, inode.Position, SEGMENT_PADDING)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read segment: %w", err)
