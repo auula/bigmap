@@ -117,8 +117,13 @@ func (lfs *LogStructuredFS) PutSegment(inum uint64, seg Segment) error {
 	return nil
 }
 
-func (lfs *LogStructuredFS) BatchFetchSegments(inodes ...*INode) ([]*Segment, error) {
-	return nil, nil
+func (lfs *LogStructuredFS) BatchFetchSegments(inodes ...uint64) ([]*Segment, error) {
+	var segs []*Segment
+	for _, inode := range inodes {
+		seg, _ := lfs.FetchSegment(inode)
+		segs = append(segs, seg)
+	}
+	return segs, nil
 }
 
 func (lfs *LogStructuredFS) FetchSegment(inum uint64) (*Segment, error) {
