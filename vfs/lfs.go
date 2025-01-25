@@ -147,9 +147,7 @@ func (lfs *LogStructuredFS) DeleteSegment(inum uint64) error {
 	delete(imap.index, inum)
 	imap.mu.Unlock()
 
-	appendDataWithLock(&lfs.mu, lfs.active, NewTombstoneSegment([]byte{}))
-
-	return nil
+	return appendDataWithLock(&lfs.mu, lfs.active, NewTombstoneSegment([]byte{}))
 }
 
 func (lfs *LogStructuredFS) FetchSegment(inum uint64) (*Segment, error) {
