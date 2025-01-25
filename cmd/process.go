@@ -58,7 +58,7 @@ func init() {
 		if err != nil {
 			clog.Failed(err)
 		}
-		clog.Info("Loading custom config file was successful")
+		clog.Info("Loading custom config file was successfully")
 	}
 
 	if fl.debug {
