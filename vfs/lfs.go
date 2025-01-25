@@ -135,6 +135,23 @@ func (lfs *LogStructuredFS) BatchFetchSegments(inodes ...uint64) ([]*Segment, er
 	return segs, nil
 }
 
+func (lfs *LogStructuredFS) DeleteSegment(inum uint64) error {
+	// Calculate the index shard
+	imap := lfs.indexs[inum%uint64(indexShard)]
+	if imap == nil {
+		return fmt.Errorf("inode index shard for %d not found", inum)
+	}
+
+	// Check if the inode is expired
+	imap.mu.Lock()
+	delete(imap.index, inum)
+	imap.mu.Unlock()
+
+	appendDataWithLock(&lfs.mu, lfs.active, NewTombstoneSegment([]byte{}))
+
+	return nil
+}
+
 func (lfs *LogStructuredFS) FetchSegment(inum uint64) (*Segment, error) {
 	// Calculate the index shard
 	imap := lfs.indexs[inum%uint64(indexShard)]
